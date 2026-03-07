@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # External services
     openai_api_key: Optional[SecretStr] = None
+    openai_model: str = "gpt-4.1-mini"
     luma_api_key: Optional[SecretStr] = None
     tiktok_client_key: Optional[SecretStr] = None
     tiktok_client_secret: Optional[SecretStr] = None
@@ -23,6 +24,8 @@ class Settings(BaseSettings):
     luma_generation_endpoint: str = "https://api.lumalabs.ai/dream-machine/v1/generations"
     luma_status_endpoint: str = "https://api.lumalabs.ai/dream-machine/v1/generations/{generation_id}"
     luma_model: str = "ray-2"
+    luma_resolution: str = "720p"
+    luma_duration: str = "15s"
     tiktok_api_base: str = "https://open.tiktokapis.com"
     tiktok_upload_endpoint: str = "/v2/video/upload/"
     tiktok_publish_endpoint: str = "/v2/video/post/"

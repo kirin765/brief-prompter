@@ -1,6 +1,61 @@
-[Task]
-너는 쇼츠/릴스/틱톡에서 조회수/공유/완주율이 잘 나오는 영상을 만드는 크리에이티브 디렉터다.
-상품은 서울의 새로운 카페이다.
-오프닝 0:00-0:03에는 매장 외관을 보여주고, 0:03-0:06에는 바리스타가 라떼를 내리며 미소 짓는 장면을 넣어줘.
-배경음악은 재즈로 깔고 자막은 0:04에 "오늘의 추천 음료"라고 넣어줘.
-마지막 0:20에는 "좋아요와 팔로우 부탁해요" CTA를 넣고, 해시태그 #카페 #브이로그도 추가해줘.
+ Create a 15–20 second short-form vertical video (1080x1920, TikTok/Reels style) with a strong curiosity hook in the
+  first 2 seconds.
+
+  Theme: “Unexpected 3-step trick that looks impossible but is super simple”
+  Mood: Fast, satisfying, clean motion + subtle ASMR-like texture, high contrast, bold captions
+  Platform goal: maximize retention and shares (view_velocity pattern), with a clear one CTA.
+
+  Shot plan:
+  0:00–0:02
+  - Hook: Close-up close framing, hand performs a tiny action, then cut to dramatic reveal.
+  - On-screen text: “이 방법, 3초만에 확인해보세요”
+  - Sound: Sharp hit + quick riser
+
+  0:02–0:05
+  - Show the problem in one frame (before state), quick zoom, 3 rapid cuts.
+  - On-screen text: “대부분 다들 여길 놓침”
+  - Transition: Swipe transition.
+
+  0:05–0:11
+  - Show step 1 → step 2 → step 3 with jump cuts every 0.7s (fast pacing).
+  - Keep each step visually distinct with color-coded labels.
+  - On-screen text:
+    - “Step 1: 준비”
+    - “Step 2: 각도”
+    - “Step 3: 마무리 클릭”
+
+  0:11–0:16
+  - Insert a short “near miss” moment then immediate fix (pattern to hold attention).
+  - On-screen text: “이 순간만 피하면 실패 확률 0.0”
+
+  0:16–0:19
+  - Final reveal + emotional payoff, product/idea fully completed.
+  - On-screen text: “이건 누구나 10초면 따라해요”
+
+  0:19–0:20
+  - CTA: one strong call-to-action with end-screen.
+  - On-screen text: “좋아요 눌러서 더 많은 팁 받아보기”
+
+  Audio:
+  - Beat: moderate-tempo, 2–2.5 BPM feel, with impact SFX at each cut point.
+  - Keep subtitles always on and easy to read (Korean, bold sans-serif, one line max).
+
+  Edit rules:
+  - Cut cadence: 0.6~1.4 seconds per clip, never longer than 1.6s.
+  - Keep 1.0x–1.2x speed only; avoid over-fast motion.
+  - Avoid dead air >0.3s.
+  - Last frame lingers 0.4s for memory anchor.
+
+  Captions + hashtags:
+  - Caption: “이 3단계, 처음엔 이상하지만 결과는 반전입니다. 저장해두면 바로 써먹어요.”
+  - Hashtags: #viroal #Shorts #TikTok #Hack #DIY #Korea
+
+  Generate output requirements:
+  1) concept_title
+  2) 1-line hook_script(0:00–0:02)
+  3) full_script with Korean narration and timed captions
+  4) shotlist_with_timestamps
+  5) onscreen_text_timeline
+  6) edit_recipe (cuts, transitions, music cues)
+  7) caption_and_hashtags
+  8) 3 A/B test variants (A hook variation, B pacing variation, C caption variation)

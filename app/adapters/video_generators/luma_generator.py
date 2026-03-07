@@ -38,6 +38,8 @@ class LumaGenerator:
             "prompt": prompt,
             "model": self.settings.luma_model,
             "aspect_ratio": "9:16",
+            "resolution": self.settings.luma_resolution,
+            "duration": self.settings.luma_duration,
             "metadata": (metadata or {}),
         }
 

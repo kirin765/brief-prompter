@@ -37,24 +37,61 @@ class OpenAIPromptTransformer:
         if not self.client:
             return self._shorten(cleaned)
 
+        system_prompt = (
+            "You convert short-form creative briefs into concise prompts optimized for Luma Dream Machine video generation.\n\n"
+            "Your task:\n"
+            "- Read the user's creative brief.\n"
+            "- Extract only what should be visually shown in the video.\n"
+            "- Rewrite it as one clean Luma-ready prompt.\n\n"
+            "Rules:\n"
+            "- Remove timestamps.\n"
+            "- Remove editing instructions such as rapid cuts, jump cuts, zoom cues, transitions, pacing notes, and sound cues.\n"
+            "- Remove on-screen text, captions, hashtags, CTA language, platform strategy notes, and output formatting requests.\n"
+            "- Keep only visible subject, action, environment, progression, and final reveal.\n"
+            "- Keep the result grounded and specific.\n"
+            "- Prefer 5 to 7 sentences.\n"
+            "- Assume a vertical 9:16 short-form video.\n"
+            "- End with a short style clause such as clean background, bright or cinematic lighting, realistic motion, fast-paced social media style.\n"
+            "- Do not output bullet points.\n"
+            "- Do not explain your choices.\n"
+            "- Return only the final prompt text.\n"
+        )
+        user_prompt = (
+            "Transform the following creative brief into a single Luma Dream Machine prompt.\n\n"
+            f"Brief:\n{cleaned}"
+        )
+
         try:
+            payload = {
+                "model": self.settings.openai_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": 0.2,
+                "max_output_tokens": 160,
+            }
             response = await asyncio.wait_for(
-                self.client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": (
-                                "You are a prompt engineer for Luma Dream Machine. "
-                                "Input is a marketing brief; output only a short vertical short-form video prompt. "
-                                "Keep visible scene content, subject, action, environment, style. "
-                                "Do not include timestamps, shot-by-shot cues, CTA, hashtags, subtitles, platform metadata, or sound instructions."
-                            ),
-                        },
-                        {"role": "user", "content": cleaned},
-                    ],
-                    temperature=0.2,
-                ),
+                self.client.chat.completions.create(**payload),
+                timeout=20,
+            )
+            content = response.choices[0].message.content if response.choices else ""
+            if not content:
+                return self._shorten(cleaned)
+            return self._shorten(content.strip())
+        except TypeError:
+            # Chat completion endpoint may reject max_output_tokens in some SDK versions.
+            fallback_payload = {
+                "model": self.settings.openai_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": 0.2,
+                "max_tokens": 160,
+            }
+            response = await asyncio.wait_for(
+                self.client.chat.completions.create(**fallback_payload),
                 timeout=20,
             )
             content = response.choices[0].message.content if response.choices else ""
