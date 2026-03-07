@@ -1,4 +1,4 @@
-from collections.abc import Generator, Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import Optional
@@ -26,21 +26,21 @@ def get_engine(database_url: str) -> Engine:
 
 
 @lru_cache
-def get_session_factory(database_url: str | None = None) -> Callable[[], Session]:
+def get_session_factory(database_url: Optional[str] = None) -> Callable[[], Session]:
     cfg = get_settings()
     database_url_final = database_url or cfg.database_url
     engine = get_engine(database_url_final)
-    return sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    return sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
 
-def init_db(database_url: str | None = None) -> None:
+def init_db(database_url: Optional[str] = None) -> None:
     engine = get_engine(database_url or get_settings().database_url)
     Base.metadata.create_all(bind=engine)
 
 
 @contextmanager
-def session_scope(database_url: str | None = None) -> Generator[Session, None, None]:
+def session_scope(database_url: Optional[str] = None) -> Generator[Session, None, None]:
     factory = get_session_factory(database_url)
     session = factory()
     try:

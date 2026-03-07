@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,21 +11,21 @@ class JobOut(BaseModel):
     job_id: str
     job_type: str
     status: JobStatus
-    raw_brief_snapshot: str | None = None
-    transformed_prompt: str | None = None
-    luma_generation_id: str | None = None
-    luma_status: str | None = None
-    luma_asset_url: str | None = None
-    local_video_path: str | None = None
-    tiktok_caption: str | None = None
-    tiktok_upload_status: str | None = None
-    tiktok_post_id: str | None = None
-    error_message: str | None = None
+    raw_brief_snapshot: Optional[str] = None
+    transformed_prompt: Optional[str] = None
+    luma_generation_id: Optional[str] = None
+    luma_status: Optional[str] = None
+    luma_asset_url: Optional[str] = None
+    local_video_path: Optional[str] = None
+    tiktok_caption: Optional[str] = None
+    tiktok_upload_status: Optional[str] = None
+    tiktok_post_id: Optional[str] = None
+    error_message: Optional[str] = None
     retry_count: int = 0
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    started_at: datetime | None = None
-    completed_at: datetime | None = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

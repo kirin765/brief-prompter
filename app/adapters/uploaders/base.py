@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from typing import Protocol
 
 
@@ -6,9 +7,9 @@ from typing import Protocol
 class UploadResult:
     upload_status: str
     success: bool
-    post_id: str | None = None
-    post_url: str | None = None
-    error_message: str | None = None
+    post_id: Optional[str] = None
+    post_url: Optional[str] = None
+    error_message: Optional[str] = None
 
 
 class SocialUploader(Protocol):

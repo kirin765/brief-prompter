@@ -21,7 +21,7 @@ class DummyGenerator:
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    async def generate(self, prompt: str, metadata: dict | None = None):
+    async def generate(self, prompt: str, metadata: dict = None):
         class Result:
             generation_id = "gid"
             status = "completed"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from typing import Optional
 
 import asyncio
 
@@ -34,7 +35,7 @@ class PipelineService:
         self.session_factory = session_factory
         self._run_lock = asyncio.Lock()
 
-    async def run_once(self, *, dry_run: bool | None = None) -> Job:
+    async def run_once(self, *, dry_run: Optional[bool] = None) -> Job:
         async with self._run_lock:
             return await self._run_job(dry_run=dry_run)
 
@@ -50,7 +51,7 @@ class PipelineService:
             rows = db.query(Job).order_by(Job.created_at.desc()).limit(limit).all()
             return rows
 
-    def get_job(self, job_id: str) -> Job | None:
+    def get_job(self, job_id: str) -> Optional[Job]:
         with self.session_scope() as db:
             return db.query(Job).filter(Job.job_id == job_id).first()
 
@@ -59,7 +60,7 @@ class PipelineService:
         with self.session_factory(self.settings.database_url) as session:
             yield session
 
-    async def _run_job(self, job_id: str | None = None, dry_run: bool | None = None) -> Job:
+    async def _run_job(self, job_id: Optional[str] = None, dry_run: Optional[bool] = None) -> Job:
         selected_dry_run = bool(self.settings.dry_run if dry_run is None else dry_run)
         now = datetime.now(timezone.utc)
         previous_dry_run = self.settings.dry_run

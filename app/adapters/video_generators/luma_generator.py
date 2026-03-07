@@ -1,7 +1,7 @@
 import asyncio
-import os
 import time
 from pathlib import Path
+from typing import Optional
 
 import httpx
 
@@ -14,7 +14,7 @@ class LumaGenerator:
     def __init__(self, settings) -> None:
         self.settings = settings
 
-    async def generate(self, prompt: str, metadata: dict | None = None) -> VideoGenerationResult:
+    async def generate(self, prompt: str, metadata: Optional[dict] = None) -> VideoGenerationResult:
         job_id = (metadata or {}).get("job_id", "pipeline")
         if self.settings.dry_run or not self.settings.luma_api_key:
             output_path = f"data/output/{job_id}.mp4"
@@ -36,6 +36,7 @@ class LumaGenerator:
 
         payload = {
             "prompt": prompt,
+            "model": self.settings.luma_model,
             "aspect_ratio": "9:16",
             "metadata": (metadata or {}),
         }
@@ -75,11 +76,15 @@ class LumaGenerator:
                 initial_delay=self.settings.retry_initial_delay,
                 max_delay=self.settings.retry_max_delay,
             )
-            status = str(result.get("status", "unknown")).lower()
+            status = str(result.get("status", result.get("state", "unknown"))).lower()
             status_history.append({"status": status, "details": result})
 
             if status in {"succeeded", "completed", "ready", "finished"}:
-                asset_url = result.get("video_url") or result.get("output_url")
+                asset_url = (
+                    result.get("video_url")
+                    or result.get("output_url")
+                    or (result.get("assets") or {}).get("video")
+                )
                 if not asset_url:
                     raise RuntimeError("Luma generation completed but no output URL returned")
                 output_path = f"data/output/{job_id}.mp4"

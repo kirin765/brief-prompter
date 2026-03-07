@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from enum import Enum
 import uuid
 
@@ -28,24 +29,24 @@ class Job(Base):
     job_type: Mapped[str] = mapped_column(String, default="scheduled")
     status: Mapped[str] = mapped_column(String, default=JobStatus.QUEUED)
 
-    raw_brief_snapshot: Mapped[str | None] = mapped_column(Text)
-    transformed_prompt: Mapped[str | None] = mapped_column(Text)
+    raw_brief_snapshot: Mapped[Optional[str]] = mapped_column(Text)
+    transformed_prompt: Mapped[Optional[str]] = mapped_column(Text)
 
-    luma_generation_id: Mapped[str | None] = mapped_column(String)
-    luma_status: Mapped[str | None] = mapped_column(String)
-    luma_asset_url: Mapped[str | None] = mapped_column(String)
-    luma_status_history: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    luma_generation_id: Mapped[Optional[str]] = mapped_column(String)
+    luma_status: Mapped[Optional[str]] = mapped_column(String)
+    luma_asset_url: Mapped[Optional[str]] = mapped_column(String)
+    luma_status_history: Mapped[Optional[list[dict]]] = mapped_column(JSON, nullable=True)
 
-    local_video_path: Mapped[str | None] = mapped_column(String)
+    local_video_path: Mapped[Optional[str]] = mapped_column(String)
 
-    tiktok_caption: Mapped[str | None] = mapped_column(Text)
-    tiktok_upload_status: Mapped[str | None] = mapped_column(String)
-    tiktok_post_id: Mapped[str | None] = mapped_column(String)
+    tiktok_caption: Mapped[Optional[str]] = mapped_column(Text)
+    tiktok_upload_status: Mapped[Optional[str]] = mapped_column(String)
+    tiktok_post_id: Mapped[Optional[str]] = mapped_column(String)
 
-    error_message: Mapped[str | None] = mapped_column(Text)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

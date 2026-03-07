@@ -1,5 +1,5 @@
-from datetime import time
 from functools import lru_cache
+from typing import Optional, Tuple
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
@@ -7,11 +7,11 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # External services
-    openai_api_key: SecretStr | None = None
-    luma_api_key: SecretStr | None = None
-    tiktok_client_key: SecretStr | None = None
-    tiktok_client_secret: SecretStr | None = None
-    tiktok_access_token: SecretStr | None = None
+    openai_api_key: Optional[SecretStr] = None
+    luma_api_key: Optional[SecretStr] = None
+    tiktok_client_key: Optional[SecretStr] = None
+    tiktok_client_secret: Optional[SecretStr] = None
+    tiktok_access_token: Optional[SecretStr] = None
 
     # App
     app_timezone: str = "Asia/Seoul"
@@ -20,8 +20,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     luma_poll_interval_sec: int = Field(default=10, ge=1)
     luma_timeout_sec: int = Field(default=600, ge=30)
-    luma_generation_endpoint: str = "https://api.lumalabs.ai/v1/generations"
-    luma_status_endpoint: str = "https://api.lumalabs.ai/v1/generations/{generation_id}"
+    luma_generation_endpoint: str = "https://api.lumalabs.ai/dream-machine/v1/generations"
+    luma_status_endpoint: str = "https://api.lumalabs.ai/dream-machine/v1/generations/{generation_id}"
+    luma_model: str = "ray-2"
     tiktok_api_base: str = "https://open.tiktokapis.com"
     tiktok_upload_endpoint: str = "/v2/video/upload/"
     tiktok_publish_endpoint: str = "/v2/video/post/"
@@ -60,7 +61,7 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def _to_int_tuple(schedule: list[int]) -> tuple[int, ...]:
+def _to_int_tuple(schedule: list[int]) -> Tuple[int, ...]:
     return tuple(
         int(hour)
         for hour in schedule
