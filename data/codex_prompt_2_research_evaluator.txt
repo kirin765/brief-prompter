@@ -1,0 +1,184 @@
+[2차 프롬프트] Event Study Evaluator + 전략 템플릿 구현
+
+이전 단계에서 구현된 collector + DB schema 프로젝트를 이어서 확장하라.
+
+목표:
+- 저장된 Binance Spot 데이터를 사용해 5분 이내 단기 테스트를 대량 수행하는 연구 엔진을 구현한다.
+- 이벤트 스터디 방식의 evaluator를 만든다.
+- mean reversion, breakout, volume spike reaction 전략 3개를 템플릿 기반으로 구현한다.
+- 평가 결과를 DB에 저장하고, 통과 전략은 registry에 approved_for_paper 상태로 기록한다.
+
+이번 단계에서 구현할 디렉토리/파일:
+├─ research/
+│  ├─ signals/
+│  │  ├─ base.py
+│  │  ├─ mean_reversion.py
+│  │  ├─ breakout.py
+│  │  └─ volume_spike.py
+│  ├─ evaluator.py
+│  ├─ event_study.py
+│  ├─ registry.py
+│  └─ filters.py
+├─ scripts/
+│  └─ run_research.py
+├─ tests/
+│  ├─ test_signals.py
+│  ├─ test_evaluator.py
+│  └─ test_registry.py
+
+DB에 추가할 테이블:
+
+1. signal_events
+- event_id
+- strategy_name
+- symbol
+- event_time
+- side
+- entry_reference_price
+- feature_snapshot_json
+- created_at
+
+2. evaluation_results
+- id
+- strategy_name
+- symbol
+- sample_count
+- avg_fwd_ret_30s
+- avg_fwd_ret_1m
+- avg_fwd_ret_3m
+- avg_fwd_ret_5m
+- median_fwd_ret_5m
+- hit_rate_1m
+- hit_rate_5m
+- avg_mfe_5m
+- avg_mae_5m
+- avg_return_after_fees
+- t_stat_5m
+- pass_flag
+- evaluated_at
+
+3. strategy_registry
+- id
+- strategy_name
+- symbol
+- status
+- last_result_id
+- notes
+- updated_at
+
+status enum 예:
+- generated
+- evaluated
+- approved_for_paper
+- rejected
+
+핵심 구현 요구사항:
+
+1. Feature builder
+저장된 klines / agg_trades 기준으로 아래 피처를 계산 가능하게 하라.
+- returns_1m
+- returns_3m
+- rolling_high_20
+- rolling_low_20
+- volume_zscore
+- close_to_vwap_deviation
+- realized_volatility_short
+- trade_count_spike
+- aggressive_trade_imbalance proxy
+
+2. 전략 템플릿 3종
+
+(1) Mean Reversion
+예시 조건:
+- ret_3m < -0.004
+- volume_zscore > 2.0
+- close_to_vwap_deviation < -0.003
+발생 시 롱 signal event 생성
+
+(2) Breakout
+예시 조건:
+- close > rolling_high_20
+- volume_zscore > 1.5
+발생 시 롱 signal event 생성
+
+(3) Volume Spike Reaction
+예시 조건:
+- trade_count_spike 또는 aggTrade 기반 체결량 급증
+- 직전 단기 변동성 확대
+- 이후 추세 지속/반전 테스트 가능한 형태
+롱/숏 둘 다 가능하게 설계 가능하면 그렇게 하라.
+
+각 전략은 공통 base class를 상속하고,
+- generate_events(df) -> events
+형태의 인터페이스를 제공하라.
+
+3. Event Study Evaluator
+각 signal event에 대해 아래 지표를 계산하라.
+- forward_return_30s
+- forward_return_1m
+- forward_return_3m
+- forward_return_5m
+- MFE_5m
+- MAE_5m
+- hit_rate_1m
+- hit_rate_5m
+- avg_return_after_fees
+- t_stat_5m
+- sample_count
+
+주의:
+- 5분 내 horizon 평가를 위해 가능한 경우 1m klines와 aggTrades를 함께 사용
+- 비용 반영 포함:
+  - taker fee
+  - spread proxy
+  - slippage proxy
+- config에서 fee/slippage bps 조정 가능하게 구현
+
+4. Pass/Fail Filters
+기본 통과 기준:
+- signal_count >= 200
+- avg_return_after_fees > 0
+- hit_rate_5m >= 0.52
+- t_stat_5m >= 2.0
+- avg_mfe_5m / max(abs(avg_mae_5m), tiny) >= 1.3
+
+이 기준은 filters.py 또는 config로 분리 가능하게 구현.
+
+5. Registry 업데이트
+- 전략 생성 후 상태 generated
+- 평가 후 evaluated
+- 기준 통과 시 approved_for_paper
+- 실패 시 rejected
+- latest evaluation_result와 연결
+
+6. run_research.py
+CLI 예시:
+python scripts/run_research.py --symbol BTCUSDT --strategy mean_reversion
+python scripts/run_research.py --symbol ETHUSDT --all-strategies
+
+출력:
+- 콘솔 요약
+- DB 저장
+- 간단한 리포트 테이블 또는 markdown 요약
+
+7. 테스트
+최소한 아래 테스트를 작성:
+- 전략별 signal 생성 테스트
+- evaluator forward return 계산 테스트
+- fee 반영 테스트
+- registry 상태 전이 테스트
+- 통과/실패 필터 테스트
+
+중요 구현 원칙:
+- 풀 포트폴리오 백테스트는 아직 하지 말 것
+- 이벤트 스터디 속도와 재현성 우선
+- 자유형 AI 전략 생성 금지
+- 템플릿 전략만 구현
+- 저장된 데이터 재사용 구조를 명확히 할 것
+
+마지막 출력 형식:
+- 추가/변경된 파일 트리
+- 각 파일의 코드
+- migration 변경사항
+- 실행 예시
+- 다음 단계로 넘길 인터페이스 설명

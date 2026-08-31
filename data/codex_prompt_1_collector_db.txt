@@ -1,0 +1,177 @@
+[1차 프롬프트] Collector + DB Schema 구현
+
+다음 요구사항에 따라 Binance Spot API 기반 AutoResearch + Trading MVP의 1차 구현을 진행하라.
+
+목표:
+- Binance REST API와 WebSocket Streams를 사용해 BTCUSDT, ETHUSDT, SOLUSDT 데이터를 수집한다.
+- 1m, 5m kline과 aggTrade, bookTicker 데이터를 PostgreSQL에 저장한다.
+- 프로젝트 기본 디렉토리 구조, 설정, DB schema, migration, collector를 우선 구현한다.
+- 아직 전략 평가기와 paper trader는 구현하지 않는다. 단, 이후 확장 가능하도록 인터페이스는 고려한다.
+
+기술 스택:
+- Python 3.12
+- httpx
+- websockets
+- SQLAlchemy
+- pydantic-settings
+- PostgreSQL
+- pytest
+
+필수 디렉토리 구조:
+binance-autoresearch/
+├─ app/
+│  ├─ main.py
+│  ├─ config.py
+│  ├─ logging.py
+│  ├─ constants.py
+│  └─ utils/
+├─ exchange/
+│  ├─ base.py
+│  └─ binance_spot.py
+├─ collector/
+│  ├─ rest_loader.py
+│  ├─ ws_client.py
+│  ├─ market_streams.py
+│  └─ persistence.py
+├─ data/
+│  ├─ schema.py
+│  ├─ models.py
+│  ├─ normalize.py
+│  └─ feature_builder.py
+├─ storage/
+│  ├─ db.py
+│  ├─ repositories.py
+│  └─ migrations/
+├─ scripts/
+│  ├─ backfill_klines.py
+│  ├─ backfill_aggtrades.py
+│  └─ run_collector.py
+├─ tests/
+│  ├─ test_collector.py
+│  └─ test_storage.py
+├─ .env.example
+├─ requirements.txt
+├─ README.md
+└─ docker-compose.yml
+
+구현 요구사항:
+
+1. 설정
+- .env.example 작성
+- 아래 환경변수를 포함:
+  APP_ENV=dev
+  DB_URL=postgresql://user:pass@localhost:5432/binance_autoresearch
+  BINANCE_API_KEY=
+  BINANCE_API_SECRET=
+  BINANCE_USE_TESTNET=true
+  SYMBOLS=BTCUSDT,ETHUSDT,SOLUSDT
+  KLINE_INTERVALS=1m,5m
+  DEFAULT_TAKER_FEE_BPS=10
+  DEFAULT_SLIPPAGE_BPS=5
+
+2. Binance 연동
+- REST API로 과거 kline, aggTrades 백필 가능해야 한다.
+- WebSocket Streams로 실시간 kline, aggTrade, bookTicker 수집 가능해야 한다.
+- 스트림 예:
+  <symbol>@kline_1m
+  <symbol>@kline_5m
+  <symbol>@aggTrade
+  <symbol>@bookTicker
+- reconnect, backoff, gap detection 기본 처리 포함.
+- 공개 마켓데이터용 data-stream.binance.vision 도메인을 옵션으로 지원.
+- Testnet 전환 가능 구조로 구현.
+
+3. DB schema
+다음 테이블을 생성하라.
+
+(1) klines
+- id
+- symbol
+- interval
+- open_time
+- close_time
+- open
+- high
+- low
+- close
+- volume
+- quote_volume
+- trade_count
+- taker_buy_base_volume
+- taker_buy_quote_volume
+- is_closed
+- created_at
+
+Unique:
+- (symbol, interval, open_time)
+
+(2) agg_trades
+- id
+- symbol
+- agg_trade_id
+- price
+- quantity
+- first_trade_id
+- last_trade_id
+- trade_time
+- is_buyer_maker
+- created_at
+
+Unique:
+- (symbol, agg_trade_id)
+
+(3) book_ticker
+- id
+- symbol
+- update_time
+- best_bid_price
+- best_bid_qty
+- best_ask_price
+- best_ask_qty
+- created_at
+
+인덱스:
+- symbol + time 계열 조회 최적화 포함
+
+4. 저장 계층
+- SQLAlchemy 모델 작성
+- repository 패턴 또는 그에 준하는 저장 계층 작성
+- upsert 지원
+- batch insert 최적화 고려
+
+5. Collector
+- REST backfill 스크립트
+  - backfill_klines.py
+  - backfill_aggtrades.py
+- 실시간 collector 스크립트
+  - run_collector.py
+- 심볼/인터벌을 config에서 읽는다.
+- 수집한 raw payload와 normalized record를 분리 처리할 수 있는 구조를 만든다.
+
+6. 테스트
+- 최소한 다음 테스트 작성:
+  - kline normalize 테스트
+  - aggTrade normalize 테스트
+  - upsert 테스트
+  - collector payload 파싱 테스트
+
+7. README
+- 설치 방법
+- PostgreSQL 준비 방법
+- .env 설정
+- run_collector / backfill 실행 예시
+- Binance Testnet 사용법
+- 현재 구현 범위 명시
+
+중요 구현 원칙:
+- 과도한 아키텍처 도입 금지
+- 코드 단순성과 확장성 균형 유지
+- 안정적인 수집 우선
+- 전략/트레이딩 로직은 아직 넣지 말 것
+- 코드 전체를 실행 가능한 상태로 제시할 것
+
+마지막 출력 형식:
+- 전체 파일 트리
+- 각 파일의 코드
+- 실행 순서
+- 남은 TODO

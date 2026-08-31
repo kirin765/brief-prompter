@@ -1,0 +1,200 @@
+[3차 프롬프트] Paper Trading + Risk Management 구현
+
+이전 단계에서 구현된 collector + research evaluator 프로젝트를 이어서 확장하라.
+
+목표:
+- approved_for_paper 상태 전략만 사용해 실시간 또는 준실시간 paper trading 엔진을 구현한다.
+- 포지션 관리, 리스크 관리, 거래 로그, 손익 추적을 포함한다.
+- live trading으로 확장 가능한 execution interface를 설계하지만, 실제 주문 실행은 stub 또는 testnet 준비 수준까지만 구현한다.
+
+이번 단계에서 구현할 디렉토리/파일:
+├─ trading/
+│  ├─ paper_engine.py
+│  ├─ execution_interface.py
+│  ├─ risk_manager.py
+│  └─ portfolio.py
+├─ reports/
+│  ├─ reporter.py
+│  └─ templates/
+├─ scripts/
+│  └─ run_paper.py
+├─ tests/
+│  ├─ test_paper_engine.py
+│  ├─ test_risk_manager.py
+│  └─ test_portfolio.py
+
+DB에 추가할 테이블:
+
+1. paper_orders
+- id
+- order_time
+- strategy_name
+- symbol
+- side
+- order_type
+- requested_price
+- filled_price
+- quantity
+- status
+- fee_paid
+- slippage_bps
+- created_at
+
+2. paper_positions
+- id
+- strategy_name
+- symbol
+- side
+- entry_time
+- entry_price
+- quantity
+- stop_loss_price
+- take_profit_price
+- max_holding_seconds
+- status
+- exit_time
+- exit_price
+- realized_pnl
+- realized_pnl_pct
+- created_at
+- updated_at
+
+3. paper_equity_curve
+- id
+- ts
+- cash_balance
+- position_value
+- total_equity
+- daily_drawdown_pct
+- created_at
+
+4. risk_events
+- id
+- event_time
+- strategy_name
+- symbol
+- event_type
+- details_json
+- created_at
+
+핵심 구현 요구사항:
+
+1. Execution Interface
+- execution_interface.py에 공통 인터페이스 정의
+- place_order(), close_position(), get_open_positions() 같은 형태
+- 현재는 paper execution 구현
+- 추후 Binance live/testnet adapter 연결 가능 구조
+
+2. Paper Engine
+approved_for_paper 전략의 실시간 signal event를 받아 paper order를 생성한다.
+
+필수 기능:
+- 진입
+- 청산
+- 포지션 추적
+- 수수료 반영
+- slippage 반영
+- 잔고 추적
+- 주문/포지션 로그 저장
+
+진입 규칙:
+- 기본은 signal 발생 직후 다음 평가 가능한 가격으로 진입
+- 전략별 파라미터:
+  - take_profit_pct
+  - stop_loss_pct
+  - max_holding_seconds
+  - cooldown_seconds
+
+청산 규칙:
+- take profit
+- stop loss
+- max holding time 초과
+- risk manager 강제 중지
+
+예시 기본값:
+- take_profit_pct = 0.0025
+- stop_loss_pct = 0.0018
+- max_holding_seconds = 300
+- cooldown_seconds = 120
+
+3. Risk Manager
+반드시 아래 제한을 구현하라.
+- 전략당 최대 자본 비중
+- 심볼당 동시 포지션 수 제한
+- 전체 일일 손실 한도
+- 연속 손실 한도
+- 동일 전략 cooldown
+- 필요 시 trading halt
+
+예시 config:
+- PAPER_START_BALANCE=10000
+- MAX_STRATEGY_CAPITAL_PCT=0.1
+- MAX_DAILY_LOSS_PCT=0.02
+- MAX_CONCURRENT_POSITIONS_PER_SYMBOL=1
+- MAX_CONSECUTIVE_LOSSES=5
+
+리스크 발생 시 risk_events 기록.
+
+4. Portfolio
+- 현재 cash balance
+- open positions mark-to-market
+- total equity
+- realized/unrealized pnl
+- strategy별 자본 사용량
+- symbol별 익스포저
+를 관리하라.
+
+5. run_paper.py
+CLI 예시:
+python scripts/run_paper.py
+python scripts/run_paper.py --symbols BTCUSDT,ETHUSDT
+
+동작:
+- approved_for_paper 전략 조회
+- 최신 시장 데이터 기반 signal 수신
+- 리스크 검토
+- paper order 실행
+- 포지션/손익 추적
+- 콘솔 로그 및 DB 저장
+
+6. Reports
+reports/reporter.py에서 아래 요약 리포트 생성 가능하게 하라.
+- 일별 손익
+- 전략별 승률
+- 전략별 평균 보유시간
+- 최대 낙폭
+- 총 체결 수
+- fee/slippage 누적치
+
+콘솔 출력과 markdown/text 리포트 둘 다 가능하면 좋다.
+
+7. 테스트
+최소한 아래 테스트를 작성:
+- 진입/청산 로직 테스트
+- stop loss / take profit 동작 테스트
+- max holding time 청산 테스트
+- risk manager 제한 테스트
+- equity curve 계산 테스트
+
+중요 구현 원칙:
+- 실제 live 주문 실행은 하지 말 것
+- paper trading 안정성과 로그 추적 우선
+- research 모듈과 trading 모듈을 분리 유지
+- 승인되지 않은 전략은 절대 실행하지 말 것
+- 코드 단순성 유지
+
+추가 요구:
+- README를 업데이트해 paper trading 실행법과 주의사항을 추가하라.
+- .env.example에 아래 항목 추가:
+  PAPER_START_BALANCE=10000
+  MAX_STRATEGY_CAPITAL_PCT=0.1
+  MAX_DAILY_LOSS_PCT=0.02
+  MAX_CONCURRENT_POSITIONS_PER_SYMBOL=1
+  MAX_CONSECUTIVE_LOSSES=5
+
+마지막 출력 형식:
+- 추가/변경된 파일 트리
+- 각 파일의 코드
+- 실행 예시
+- paper trading 동작 설명
+- live/testnet 확장 시 필요한 TODO
